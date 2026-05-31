@@ -2,7 +2,9 @@ import os
 
 
 APP_NAME = "CoinSight"
-MAX_FAVORITE_MARKETS = int(os.getenv("MAX_FAVORITE_MARKETS", "5"))
+
+MAX_FAVORITE_MARKETS = int(os.getenv("MAX_FAVORITE_MARKETS", "7"))
+
 ANALYSIS_CACHE_MINUTES = int(os.getenv("ANALYSIS_CACHE_MINUTES", "30"))
 JWT_SECRET = os.getenv("JWT_SECRET", "change-this-secret-before-deploy")
 JWT_ALGORITHM = "HS256"
