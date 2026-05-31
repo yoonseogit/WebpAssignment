@@ -46,37 +46,27 @@ async def summarize_market(market: str, korean_name: str, candles: List[dict]) -
 
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
     try:
-        response = await client.responses.create(
+        response = await client.chat.completions.create(
             model=OPENAI_MODEL,
-            input=[
+            messages=[
                 {
                     "role": "system",
-                    "content": "You summarize cryptocurrency candle data in Korean for an educational web programming project. Never provide investment advice.",
+                    "content": "You summarize cryptocurrency candle data in Korean for an educational web programming project. Never provide investment advice. Return only valid JSON with summary, trend, volatility_score, and risk_note.",
                 },
                 {
                     "role": "user",
                     "content": json.dumps(prompt, ensure_ascii=False),
                 },
             ],
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "market_analysis",
-                    "schema": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "properties": {
-                            "summary": {"type": "string"},
-                            "trend": {"type": "string", "enum": ["상승", "하락", "횡보", "혼조"]},
-                            "volatility_score": {"type": "number", "minimum": 0, "maximum": 100},
-                            "risk_note": {"type": "string"},
-                        },
-                        "required": ["summary", "trend", "volatility_score", "risk_note"],
-                    },
-                    "strict": True,
-                }
-            },
+            response_format={"type": "json_object"},
         )
-        return json.loads(response.output_text)
-    except (OpenAIError, json.JSONDecodeError, KeyError):
+        content = response.choices[0].message.content or "{}"
+        data = json.loads(content)
+        return {
+            "summary": str(data["summary"]),
+            "trend": data["trend"] if data["trend"] in ["상승", "하락", "횡보", "혼조"] else "혼조",
+            "volatility_score": float(data["volatility_score"]),
+            "risk_note": str(data["risk_note"]),
+        }
+    except (OpenAIError, json.JSONDecodeError, KeyError, TypeError, ValueError, AttributeError):
         return fallback_analysis(market, korean_name, candles)
