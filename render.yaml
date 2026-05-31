@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: coinsight
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MAX_FAVORITE_MARKETS
+        value: 5
+      - key: ANALYSIS_CACHE_MINUTES
+        value: 30
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
