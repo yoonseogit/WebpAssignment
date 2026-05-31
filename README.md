@@ -8,6 +8,7 @@ CoinSight는 업비트 공개 API를 활용해 KRW 마켓의 변동성 순위를
 
 - 서비스명: CoinSight
 - 주제: 업비트 변동성 기반 관심 코인 GPT 요약 분석 서비스
+- GitHub 저장소: https://github.com/yoonseogit/WebpAssignment
 - 배포 방식: Docker 기반 Render 배포
 - 핵심 기술: React, FastAPI, PostgreSQL, Docker, Nginx, GitHub Actions
 
@@ -206,7 +207,7 @@ git init
 git add .
 git commit -m "Initial CoinSight project"
 git branch -M main
-git remote add origin https://github.com/USERNAME/coinsight.git
+git remote add origin https://github.com/yoonseogit/WebpAssignment.git
 git push -u origin main
 ```
 
