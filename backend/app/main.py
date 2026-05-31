@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .ai import summarize_market
-from .config import ANALYSIS_CACHE_MINUTES, APP_NAME, MAX_FAVORITE_MARKETS
+from .config import ANALYSIS_CACHE_MINUTES, APP_NAME, MAX_FAVORITE_MARKETS, OPENAI_API_KEY
 from .database import get_db, init_db
 from .models import AnalysisCache, FavoriteMarket, User
 from .schemas import (
@@ -169,7 +169,8 @@ async def analyze_favorites(
             .order_by(AnalysisCache.created_at.desc())
             .first()
         )
-        if cached:
+        is_fallback_cache = cached and "OpenAI API를 사용할 수 없어" in cached.risk_note
+        if cached and not (OPENAI_API_KEY and is_fallback_cache):
             analyses.append(
                 {
                     "market": cached.market,
