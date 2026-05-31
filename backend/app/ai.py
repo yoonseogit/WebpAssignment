@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAIError
 
 from .config import OPENAI_API_KEY, OPENAI_MODEL
 
@@ -18,7 +18,7 @@ def fallback_analysis(market: str, korean_name: str, candles: List[dict]) -> dic
         "summary": f"{korean_name}({market})은 최근 14일 기준 {change_pct:.2f}% 변동했습니다. 최고가와 최저가 기준 변동폭은 약 {volatility_pct:.2f}%입니다.",
         "trend": trend,
         "volatility_score": round(min(volatility_pct, 100), 2),
-        "risk_note": "OpenAI API 키가 설정되지 않아 로컬 계산 기반 요약을 표시합니다. 이 내용은 투자 조언이 아닌 학습용 데이터 요약입니다.",
+        "risk_note": "OpenAI API를 사용할 수 없어 로컬 계산 기반 요약을 표시합니다. 이 내용은 투자 조언이 아닌 학습용 데이터 요약입니다.",
     }
 
 
@@ -45,35 +45,38 @@ async def summarize_market(market: str, korean_name: str, candles: List[dict]) -
     }
 
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-    response = await client.responses.create(
-        model=OPENAI_MODEL,
-        input=[
-            {
-                "role": "system",
-                "content": "You summarize cryptocurrency candle data in Korean for an educational web programming project. Never provide investment advice.",
-            },
-            {
-                "role": "user",
-                "content": json.dumps(prompt, ensure_ascii=False),
-            },
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "market_analysis",
-                "schema": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "properties": {
-                        "summary": {"type": "string"},
-                        "trend": {"type": "string", "enum": ["상승", "하락", "횡보", "혼조"]},
-                        "volatility_score": {"type": "number", "minimum": 0, "maximum": 100},
-                        "risk_note": {"type": "string"},
-                    },
-                    "required": ["summary", "trend", "volatility_score", "risk_note"],
+    try:
+        response = await client.responses.create(
+            model=OPENAI_MODEL,
+            input=[
+                {
+                    "role": "system",
+                    "content": "You summarize cryptocurrency candle data in Korean for an educational web programming project. Never provide investment advice.",
                 },
-                "strict": True,
-            }
-        },
-    )
-    return json.loads(response.output_text)
+                {
+                    "role": "user",
+                    "content": json.dumps(prompt, ensure_ascii=False),
+                },
+            ],
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "market_analysis",
+                    "schema": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "summary": {"type": "string"},
+                            "trend": {"type": "string", "enum": ["상승", "하락", "횡보", "혼조"]},
+                            "volatility_score": {"type": "number", "minimum": 0, "maximum": 100},
+                            "risk_note": {"type": "string"},
+                        },
+                        "required": ["summary", "trend", "volatility_score", "risk_note"],
+                    },
+                    "strict": True,
+                }
+            },
+        )
+        return json.loads(response.output_text)
+    except (OpenAIError, json.JSONDecodeError, KeyError):
+        return fallback_analysis(market, korean_name, candles)
